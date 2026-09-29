@@ -1,11 +1,11 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 
-export async function getDemoUser() {
+export async function getUserByEmail(email: string) {
   await connectToDatabase();
 
   const user = await User.findOne({
-    email: "demo@eventfit.dev",
+    email,
   }).lean();
 
   if (!user) {

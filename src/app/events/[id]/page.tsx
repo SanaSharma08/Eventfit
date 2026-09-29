@@ -1,5 +1,14 @@
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
 import { getEventById } from "@/services/events";
+import { getUserByEmail } from "@/services/users";
+import {
+  getRegistrationByUserAndEvent,
+  getRegistrationCountByEventId,
+} from "@/services/registrations";
+import { authOptions } from "@/lib/auth";
+import RegisterButton from "@/components/events/RegisterButton";
+
 
 interface EventPageProps {
   params: Promise<{
@@ -13,10 +22,23 @@ export default async function EventPage({
   const { id } = await params;
 
   const event = await getEventById(id);
+  const registrationCount = await getRegistrationCountByEventId(
+  event._id
+);
 
   if (!event) {
     notFound();
   }
+
+  const session = await getServerSession(authOptions);
+
+const user = session?.user?.email
+  ? await getUserByEmail(session.user.email)
+  : null;
+
+const registration = user
+  ? await getRegistrationByUserAndEvent(user._id, event._id)
+  : null;
 
   return (
     <main className="min-h-screen bg-[#080808] px-6 py-16 text-white">
@@ -49,6 +71,15 @@ export default async function EventPage({
               {event.startTime} — {event.endTime}
             </p>
           </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#858585]">
+                Availability
+            </p>
+
+            <p className="mt-2 text-lg font-bold">
+                {registrationCount} / {event.capacity} registered
+            </p>
+            </div>
 
           <div>
             <p className="text-xs uppercase tracking-widest text-neutral-500">
@@ -86,9 +117,10 @@ export default async function EventPage({
             </p>
           </div>
 
-          <button className="bg-[#FF1F3D] px-6 py-3 text-sm font-bold uppercase tracking-wide text-white">
-            Register →
-          </button>
+          <RegisterButton
+            eventId={event._id}
+            alreadyRegistered={Boolean(registration)}
+            />
 
         </div>
 
